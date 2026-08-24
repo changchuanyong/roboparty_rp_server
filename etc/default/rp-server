@@ -2,7 +2,7 @@
 RP_HOST=0.0.0.0
 RP_PORT=8765
 RP_LOG_LEVEL=info
-RP_ROBOT_CONFIG=/opt/roboparty/share/roboparty_inference/robots/rpo/robot.yaml
+RP_ROBOT_CONFIG=/opt/roboparty/share/roboparty_inference/config/robot.yaml
 RP_SERVER_CONFIG=/opt/roboparty/share/roboparty-rp-server/config/server.yaml
 
 # Production service intentionally has no RP_MOCK setting.
