@@ -1,3 +1,9 @@
+roboparty-rp-server (1.3.3-1) unstable; urgency=medium
+
+  * Fix rp-server robot config path.
+
+ -- changchuanyong <1984715306@qq.com>  Sat, 24 Aug 2026 14:53:57 +0800
+
 roboparty-rp-server (1.3.2-1) unstable; urgency=medium
 
   * Read BMS telemetry directly from bms_daemon over its Unix socket.
