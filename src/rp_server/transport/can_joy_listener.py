@@ -9,6 +9,7 @@ import asyncio
 import logging
 import socket
 import struct
+import time
 from typing import Any, Optional
 
 from ..protocol.at_parser import AtCommand
@@ -24,6 +25,7 @@ CAN_SFF_MASK = 0x000007FF
 CAN_RAW_FILTER = 1
 CAN_RAW_FD_FRAMES = 5
 SOL_CAN_RAW = 101
+CAN_FRAME_DEBOUNCE_SECONDS = 0.050
 
 
 def decode_can_frame(frame: bytes) -> Optional[tuple[int, bytes]]:
@@ -61,6 +63,8 @@ class CANJoyListener:
         self._sock: Optional[socket.socket] = None
         self._reader_task: Optional[asyncio.Task] = None
         self._click_task: Optional[asyncio.Task] = None
+        self._click_queue: asyncio.Queue[None] = asyncio.Queue()
+        self._last_match_time: Optional[float] = None
         self._button_id = 0
 
     async def start(self) -> bool:
@@ -70,8 +74,9 @@ class CANJoyListener:
         try:
             sock = socket.socket(socket.AF_CAN, socket.SOCK_RAW, socket.CAN_RAW)
             sock.setsockopt(SOL_CAN_RAW, CAN_RAW_FD_FRAMES, 1)
-            # Accept only standard data frame 0x003; reject extended, remote, and error frames.
-            filter_mask = CAN_SFF_MASK | CAN_EFF_FLAG | CAN_RTR_FLAG | CAN_ERR_FLAG
+            # Match only standard data frames. Including CAN_ERR_FLAG here would
+            # register this socket in SocketCAN's error-frame receive list.
+            filter_mask = CAN_SFF_MASK | CAN_EFF_FLAG | CAN_RTR_FLAG
             sock.setsockopt(
                 SOL_CAN_RAW,
                 CAN_RAW_FILTER,
@@ -119,6 +124,8 @@ class CANJoyListener:
         tasks = [task for task in (reader_task, click_task) if task is not None]
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
+        self._click_queue = asyncio.Queue()
+        self._last_match_time = None
 
     async def _read_loop(self) -> None:
         if self._sock is None:
@@ -141,10 +148,28 @@ class CANJoyListener:
         raw_can_id, payload = decoded
         if raw_can_id != self._can_id or payload not in self._payloads:
             return False
-        if self._click_task is not None and not self._click_task.done():
+
+        now = time.monotonic()
+        if (
+            self._last_match_time is not None
+            and now - self._last_match_time < CAN_FRAME_DEBOUNCE_SECONDS
+        ):
             return False
-        self._click_task = asyncio.create_task(self._click_lb())
+        self._last_match_time = now
+
+        self._click_queue.put_nowait(None)
+        if self._click_task is None or self._click_task.done():
+            self._click_task = asyncio.create_task(self._click_loop())
         return True
+
+    async def _click_loop(self) -> None:
+        """Run accepted LB clicks in order without blocking CAN reception."""
+        while True:
+            await self._click_queue.get()
+            try:
+                await self._click_lb()
+            finally:
+                self._click_queue.task_done()
 
     async def _click_lb(self) -> None:
         try:
