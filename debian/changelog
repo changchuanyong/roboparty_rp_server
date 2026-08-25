@@ -1,3 +1,10 @@
+roboparty-rp-server (1.3.5-1) unstable; urgency=medium
+
+  * Add LB/RB/LT/RT shoulder button mapping.
+  * Reject authenticated control packets with non-increasing timestamps.
+
+ -- changchuanyong <1984715306@qq.com>  Tue, 25 Aug 2026 17:09:39 +0800
+
 roboparty-rp-server (1.3.4-1) unstable; urgency=medium
 
   * Add CAN FD input mapping from can_top frame 0x003 with payload
