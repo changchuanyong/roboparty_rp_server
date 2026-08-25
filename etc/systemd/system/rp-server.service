@@ -13,7 +13,7 @@ WorkingDirectory=/opt/roboparty/share/roboparty-rp-server
 Environment=PYTHONPATH=/opt/roboparty/lib/python3/vendor-packages:/opt/roboparty/lib/python3/dist-packages
 Environment=PYTHONNOUSERSITE=1
 Environment=PYTHONUNBUFFERED=1
-Environment=RP_ROBOT_CONFIG=/opt/roboparty/share/roboto-inference/config/robot/robot.yaml
+Environment=RP_ROBOT_CONFIG=/opt/roboparty/share/roboparty_inference/robots/rpo/robot.yaml
 Environment=RP_SERVER_CONFIG=/opt/roboparty/share/roboparty-rp-server/config/server.yaml
 EnvironmentFile=-/etc/default/rp-server
 EnvironmentFile=-/etc/rp-server/rp-server.env

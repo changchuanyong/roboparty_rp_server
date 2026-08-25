@@ -1,3 +1,9 @@
+roboparty-rp-server (1.3.6-1) unstable; urgency=medium
+
+  * Restore the rp-server robot configuration path.
+
+ -- changchuanyong <1984715306@qq.com>  Tue, 25 Aug 2026 19:32:49 +0800
+
 roboparty-rp-server (1.3.5-1) unstable; urgency=medium
 
   * Add LB/RB/LT/RT shoulder button mapping.
