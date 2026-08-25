@@ -26,6 +26,7 @@ from ..state import AppState
 from .serial_server import SerialATServer
 from .bt_server import BTServer
 from .udp_listener import UDPJoyListener
+from .can_joy_listener import CANJoyListener
 
 logger = logging.getLogger("rp_server.transport")
 packet_logger = logging.getLogger("rp_server.packets")
@@ -114,6 +115,21 @@ def create_app(config: dict) -> FastAPI:
         head=head,
     ) if transports_enabled.get("udp") else None
 
+    can_joy_cfg = config.get("can_gamepad", {})
+    can_joy_payloads = can_joy_cfg.get("payloads")
+    if can_joy_payloads is None:
+        if "payload" in can_joy_cfg:
+            can_joy_payloads = [can_joy_cfg["payload"]]
+        else:
+            can_joy_payloads = ["010001AA00000000", "010001AA00000001"]
+    can_joy_srv = CANJoyListener(
+        at_handler,
+        interface=can_joy_cfg.get("interface", "can_top"),
+        can_id=int(can_joy_cfg.get("can_id", 0x003)),
+        payloads=tuple(bytes.fromhex(payload) for payload in can_joy_payloads),
+        click_ms=int(can_joy_cfg.get("click_ms", 50)),
+    ) if can_joy_cfg.get("enabled", False) else None
+
     # --- lifespan ---
     @app.on_event("startup")
     async def on_startup():
@@ -143,6 +159,8 @@ def create_app(config: dict) -> FastAPI:
             await bt_srv.start()
         if udp_srv:
             await udp_srv.start()
+        if can_joy_srv and not mock:
+            await can_joy_srv.start()
         logger.info("rp_server ready mock=%s port_cfg=%s", mock, config.get("server", {}))
 
     @app.on_event("shutdown")
@@ -151,6 +169,8 @@ def create_app(config: dict) -> FastAPI:
             await bt_srv.stop()
         if udp_srv:
             udp_srv.stop()
+        if can_joy_srv:
+            await can_joy_srv.stop()
         if serial_srv:
             await serial_srv.stop()
         await telemetry.stop()

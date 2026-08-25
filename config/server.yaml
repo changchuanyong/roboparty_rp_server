@@ -56,3 +56,13 @@ telemetry:
 gamepad:
   # Default WS target for on-board bridge
   ws_url: "ws://127.0.0.1:9000/ws"
+
+# can_top is preconfigured by the system for CAN FD: 1 Mbps nominal, 5 Mbps data
+can_gamepad:
+  enabled: true
+  interface: "can_top"
+  can_id: 0x003
+  payloads:
+    - "010001AA00000000" #
+    - "010001AA00000001"
+  click_ms: 50
