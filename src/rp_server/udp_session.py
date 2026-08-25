@@ -33,6 +33,7 @@ class UDPSession:
     last_seen: datetime = field(default_factory=datetime.now)
     last_heartbeat: datetime = field(default_factory=datetime.now)
     sequence: int = 0
+    last_control_timestamp: int = 0
 
     @property
     def addr_key(self) -> str:

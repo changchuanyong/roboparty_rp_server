@@ -10,6 +10,7 @@ Data format (App UDP joystick protocol):
      "left_stick_x":0.0, "left_stick_y":0.0,
      "right_stick_x":0.0, "right_stick_y":0.0,
      "btn_a":false, "btn_b":false, "btn_x":false, "btn_y":false,
+     "btn_lb":false, "btn_rb":false, "btn_lt":false, "btn_rt":false,
      "dpad_up":false, "dpad_down":false, "dpad_left":false, "dpad_right":false}
 
 Also accepts legacy format (without "type"/"token" fields).
@@ -44,6 +45,10 @@ _BTN_MAP: dict[str, str] = {
     "btn_b": "b",
     "btn_x": "x",
     "btn_y": "y",
+    "btn_lb": "lb",
+    "btn_rb": "rb",
+    "btn_lt": "ltb",
+    "btn_rt": "rtb",
     "dpad_up": "du",
     "dpad_down": "dd",
     "dpad_left": "dl",
@@ -414,14 +419,27 @@ class UDPJoyListener:
             if not session or session.state != SessionState.CONNECTED:
                 return
 
-            # 序列号校验
+            timestamp = pkt.get("timestamp")
+            if (
+                not isinstance(timestamp, int)
+                or isinstance(timestamp, bool)
+                or timestamp <= 0
+                or timestamp <= session.last_control_timestamp
+            ):
+                return
+
+            # Update session state only after both replay checks pass.
             seq = pkt.get("sequence", 0)
+            next_sequence = session.sequence
             if isinstance(seq, (int, float)):
                 seq = int(seq)
                 if seq and seq <= session.sequence:
                     return
                 if seq:
-                    session.sequence = seq
+                    next_sequence = seq
+
+            session.sequence = next_sequence
+            session.last_control_timestamp = timestamp
 
         addr_key = f"{addr[0]}:{addr[1]}"
 
