@@ -14,7 +14,7 @@ from typing import Optional
 logger = logging.getLogger("rp_server.bms")
 
 # 对应 roboparty_bms/include/bms_driver.hpp 中 pack(1) 的 BatteryStatus。
-_STATUS_STRUCT = struct.Struct("=7dIH2d33sHHHI")
+_STATUS_STRUCT = struct.Struct("=7dIH2d33sHHHIIB")
 _CONNECT_TIMEOUT = 2.0
 _IO_TIMEOUT = 0.5
 _RECONNECT_INTERVAL = 1.0
@@ -136,6 +136,8 @@ class BMSDriver:
             _hw_version,
             soh,
             cycles,
+            io_state,
+            power_on,
         ) = _STATUS_STRUCT.unpack(frame)
         if 0.0 <= percentage <= 1.0:
             percentage *= 100.0
@@ -149,4 +151,6 @@ class BMSDriver:
             "cycles": int(cycles),
             "state": str(work_state),
             "protect": int(protect_status),
+            "io_state": int(io_state),
+            "power_on": bool(power_on),
         }
